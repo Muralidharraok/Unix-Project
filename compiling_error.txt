@@ -1,0 +1,4 @@
+/home/murali/Desktop/UNIXProject/test.c: In function ‘encrypt’:
+/home/murali/Desktop/UNIXProject/test.c:67:1: error: expected declaration or statement at end of input
+ }
+ ^
