@@ -20,13 +20,13 @@ int main(int argc,char *argv[])
    DIR *dir;
    struct dirent *ent;
    int key = 5;
-   if(argc < 2)
+   if(argc < 1)
    {
      printf("Not Valid \n");
      exit(1);
    }
    int sockfd, newsockfd, portno = 9999,n,i;
-   char message[10],code[20],ch;
+   char message[10],code[20],ch,dirPath[50],fileName[100];
    struct sockaddr_in server_addr, client_addr;//internet address
    socklen_t clientlen;
 
@@ -54,43 +54,60 @@ int main(int argc,char *argv[])
      error("Error on accept \n");
    }
 
-  if ((dir = opendir ("/home/murali/Desktop/data")) != NULL) {
+  if ((dir = opendir ("/home/murali/Desktop/data")) != NULL)
+  {
    /* print all the files and directories within directory */
-  while ((ent = readdir (dir)) != NULL) {
-    bzero(code,20);
-    strcpy(code,ent->d_name); // copying files name ito code buffer
-    n = write(newsockfd, code, strlen(code)); // write it in the network
-    if (n < 0)
-    {// checking for errors
-      error("Error while writing \n");
+  while ((ent = readdir (dir)) != NULL)
+  {
+    //code[0]='\0';
+    //bzero(code,50);
+    strcat(fileName,ent->d_name); // copying files name ito code buffer
+    strcat(fileName," ");
     }
-   }
    closedir (dir);
    } else {
   /* could not open directory */
    error ("could not open directory \n");
    return EXIT_FAILURE;
    }
-   bzero(code,20);
+   n = write(newsockfd, fileName, strlen(fileName)); // write it in the network
+   if (n < 0)
+   {// checking for errors
+     error("Error while writing in server(writing filename)\n");
+   }
+   code[0]='\0';
+   //bzero(code,50);
    // Asking user to enter the file name
-   strcpy(code,"Enter file name:");
-   n = write(newsockfd, code, strlen(code)); // write it in the network
+   // strcpy(code,"Enter file name:");
+   // n = write(newsockfd, code, strlen(code)); // write it in the network
+   // if (n < 0)
+   // {// checking for errors
+   //   error("Error while writing in server(Asking for file name)\n");
+   // }
+   code[0]='\0';
+  // bzero(code,50);
+   printf("Waiting for client's file name\n");
+   n = read(newsockfd, code, 20);//readind file name
+  // printf("murali \n");
    if (n < 0)
    {// checking for errors
-     error("Error while writing \n");
+     error("Error while Reading in server(reading file name from client)\n");
    }
-   bzero(code,20);
-   n = read(newsockfd, code, 20);
-   if (n < 0)
-   {// checking for errors
-     error("Error while Reading\n");
-   }
-   int sfd=open(code,O_RDONLY|O_EXCL,0);
+  // sleep(10);
+  // printf("murali dhar \n");
+   printf("%s",code);
+   dirPath[0]='\0';
+   strcpy(dirPath,"/home/murali/Desktop/data/");
+   strcat(dirPath,code);
+   int sfd=open(dirPath,O_RDONLY|O_EXCL,0);
    //Encrypting and sending the files
+   //sleep(6);
    while(read(sfd,message,sizeof(message))>0)
  	 {
-     bzero(message,10);
- 	  for(i = 0; message[i] != '\0'; ++i)
+    //printf("Inside while of parent");
+    //printf("%s\n",message );
+     //bzero(message,10);
+ 	  for(i = 0; i<10; ++i) //message[i] != '\0'
     {
  		  ch = message[i];
 
@@ -114,12 +131,36 @@ int main(int argc,char *argv[])
  			message[i] = ch;
  		}
  	  }
+    code[0]='\0';
+    n = read(newsockfd, code, 20);//acknowledgement from client
+    if (n < 0)
+    {// checking for errors
+      error("Error while waiting for acknowledgement inside while loop\n");
+    }
     n = write(newsockfd, message, strlen(message)); // writing encrypted message in the network
     if (n < 0)
     {// checking for errors
-        error("Error while writing \n");
+        error("Error while writing into network (server side)\n");
     }
+
  	}
+
+   code[0]='\0';
+    n = read(newsockfd, code, 20);//acknowledgement from client
+    if (n < 0)
+    {// checking for errors
+     error("Error while waiting for acknowledgement outside while loop\n");
+    }
+   code[0]='\0';
+   //bzero(code,20);
+   strcpy(code,"EOT");
+
+   n = write(newsockfd, code, strlen(code)); // writing encrypted message in the network
+   if (n < 0)
+   {// checking for errors
+      error("Error while writing into network (server side)\n");
+   }
+   printf("after sending file\n");
    close(newsockfd);
    close(sockfd);
    return 0;
